@@ -1,7 +1,10 @@
-﻿using System;
+﻿using ccminer_gui.Entities;
+using System;
+using System.Drawing;
 using System.IO;
 using System.Runtime.Serialization.Formatters.Binary;
 using System.Windows.Forms;
+using System.Windows.Forms.DataVisualization.Charting;
 using System.Xml.Serialization;
 
 namespace ccminer_gui
@@ -26,13 +29,28 @@ namespace ccminer_gui
         {
             Invoke((MethodInvoker)(() =>
             {
-                listBox1.Items.Add(_miner.RemoveColors(data));
+                listBox1.Items.Add(data);
                 listBox1.SelectedIndex = listBox1.Items.Count - 1;
                 listBox1.ClearSelected();
                 if (listBox1.Items.Count > 100)
                 {
                     listBox1.Items.RemoveAt(0);
                 }
+            }));
+        }
+
+        private void ParseReport(MinerReport report)
+        {
+            Invoke((MethodInvoker)(() =>
+            {
+                acceptedSharesLabel.Text = report.AcceptedShares.ToString();
+                totalSharesLabel.Text = report.TotalShares.ToString();
+                staleSharesLabel.Text = report.StaleShares.ToString();
+
+                totalHashrateLabel.Text = report.TotalHashrate.ToString() + " kH/s";
+                blockDifficultyLabel.Text = report.BlockDifficulty.ToString();
+                stratumDifficultyLabel.Text = report.StratumDifficulty.ToString();
+                blockLabel.Text = report.Block.ToString();
             }));
         }
 
@@ -53,6 +71,15 @@ namespace ccminer_gui
 
         private string _path = Path.Combine(Environment.CurrentDirectory, "guiminer.conf");
         private BinaryFormatter _bin = new BinaryFormatter();
+
+        private int _accepted = 0;
+        private int _stale = 0;
+
+        private Series _hashrateSeries;
+        private Series _difficultySeries;
+
+        private Series _acceptedSeries;
+        private Series _staleSeries;
 
         private void SetupUI()
         {
@@ -105,11 +132,12 @@ namespace ccminer_gui
                 {
                     AddItem("----------- Starting Miner -----------");
                     _miner.Run(_customConfig);
+                    chartTimer.Start();
                 }
             }
             else
             {
-                if (!_miner.IsRunning)
+                if (!_miner.IsRunning && _isStarted)
                 {
                     AddItem("----------- Waiting to Start Miner for PC Idle -----------");
                 }
@@ -130,6 +158,7 @@ namespace ccminer_gui
             else
             {
                 _miner.Stop();
+                chartTimer.Stop();
                 AddItem("----------- Stopped Miner -----------");
                 startButton.Text = "Start";
                 algorithmBox.Enabled = true;
@@ -155,6 +184,7 @@ namespace ccminer_gui
                     {
                         AddItem("----------- Starting Miner (Detected PC Idle) -----------");
                         _miner.Run(_customConfig);
+                        chartTimer.Start();
                     }
                 }
                 else
@@ -163,6 +193,7 @@ namespace ccminer_gui
                     {
                         _miner.Stop();
                         AddItem("----------- Stopped Miner (Detected PC Input) -----------");
+                        chartTimer.Stop();
                     }
                 }
             }
@@ -173,7 +204,14 @@ namespace ccminer_gui
                 {
                     AddItem("----------- Starting Miner (Previous Crashed?) -----------");
                     _miner.Run(_customConfig);
+                    chartTimer.Start();
                 }
+            }
+
+            // No matter what, just parse the report.
+            if (_isStarted)
+            {
+                ParseReport(_miner.GetMinerReport());
             }
         }
 
@@ -183,7 +221,88 @@ namespace ccminer_gui
             {
                 _isStarted = false;
                 _miner.Stop();
+                chartTimer.Stop();
             }
+        }
+
+        private void Miner_Load(object sender, EventArgs e)
+        {
+            _difficultySeries  = new Series("Block Difficulty")
+            {
+                XValueType = ChartValueType.Time,
+                ChartType = SeriesChartType.Spline,
+                Color = Color.Orange,
+                BorderWidth = 3,
+            };
+
+            _hashrateSeries = new Series("Hashrate (kH/s)")
+            {
+                XValueType = ChartValueType.Time,
+                ChartType = SeriesChartType.Spline,
+                Color = Color.Purple,
+                BorderWidth = 3,
+            };
+
+            _difficultySeries.Points.Add(new DataPoint(DateTime.Now.ToOADate(), 0));
+            _hashrateSeries.Points.Add(new DataPoint(DateTime.Now.ToOADate(), 0));
+
+            chart1.Series.Add(_difficultySeries);
+            chart1.Series.Add(_hashrateSeries);
+
+            _acceptedSeries = new Series("Accepted Shares")
+            {
+                XValueType = ChartValueType.Time,
+                ChartType = SeriesChartType.Column,
+                Color = Color.Green,
+                BorderWidth = 3,
+                MarkerBorderWidth = 3,
+            };
+
+            _staleSeries = new Series("Stale Shares")
+            {
+                XValueType = ChartValueType.Time,
+                ChartType = SeriesChartType.Column,
+                Color = Color.Yellow,
+                BorderWidth = 3,
+                MarkerBorderWidth = 3,
+            };
+
+            _acceptedSeries.Points.Add(new DataPoint(DateTime.Now.ToOADate(), 0));
+            _staleSeries.Points.Add(new DataPoint(DateTime.Now.ToOADate(), 0));
+
+            chart2.Series.Add(_acceptedSeries);
+            chart2.Series.Add(_staleSeries);
+
+            chartTimer.Tick += ChartTimer_Tick;
+            chartTimer.Interval = 60000;
+
+            ChartTimer_Tick(null, null);
+        }
+
+        private void ChartTimer_Tick(object sender, EventArgs e)
+        {
+            var report = _miner.GetMinerReport();
+
+            var time = DateTime.Now;
+
+            _hashrateSeries.Points.Add(new DataPoint(time.ToOADate(), Convert.ToDouble(report.TotalHashrate)));
+            _difficultySeries.Points.Add(new DataPoint(time.ToOADate(), Convert.ToDouble(report.BlockDifficulty)));
+            _acceptedSeries.Points.Add(new DataPoint(time.ToOADate(), Convert.ToDouble(report.AcceptedShares - _accepted)));
+            _staleSeries.Points.Add(new DataPoint(time.ToOADate(), Convert.ToDouble(report.StaleShares - _stale)));
+
+            _accepted = report.AcceptedShares;
+            _stale = report.StaleShares;
+
+            chart2.Series["Accepted Shares"]["PixelPointWidth"] = "10";
+            chart2.Series["Stale Shares"]["PixelPointWidth"] = "10";
+
+            DateTime scroll = time.AddHours(-1);
+
+            chart1.ChartAreas[0].AxisX.Minimum = scroll.ToOADate();
+            chart1.ChartAreas[0].AxisX.Maximum = DateTime.Now.AddMinutes(1).ToOADate();
+
+            chart2.ChartAreas[0].AxisX.Minimum = scroll.ToOADate();
+            chart2.ChartAreas[0].AxisX.Maximum = DateTime.Now.AddMinutes(1).ToOADate();
         }
     }
 }

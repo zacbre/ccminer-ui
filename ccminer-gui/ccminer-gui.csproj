@@ -34,6 +34,7 @@
   <ItemGroup>
     <Reference Include="System" />
     <Reference Include="System.Core" />
+    <Reference Include="System.Windows.Forms.DataVisualization" />
     <Reference Include="System.Xml.Linq" />
     <Reference Include="System.Data.DataSetExtensions" />
     <Reference Include="Microsoft.CSharp" />
@@ -46,6 +47,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Entities\Algorithm.cs" />
+    <Compile Include="Entities\MinerReport.cs" />
     <Compile Include="Helpers\CCMinerInterop.cs" />
     <Compile Include="Helpers\CLIHelper.cs" />
     <Compile Include="Config\CustomConfig.cs" />
@@ -58,6 +60,7 @@
       <DependentUpon>Miner.cs</DependentUpon>
     </Compile>
     <Compile Include="Helpers\MinerCli.cs" />
+    <Compile Include="Interfaces\IMinerReport.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Helpers\Win32.cs" />

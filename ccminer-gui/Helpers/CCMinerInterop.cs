@@ -1,4 +1,5 @@
-﻿using System;
+﻿using ccminer_gui.Entities;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
@@ -92,20 +93,13 @@ namespace ccminer_gui
 
         public void Run(IConfig config)
         {
-            _minerCli.Open(Path.Combine(Environment.CurrentDirectory, "ccminer-x64.exe"), new string[] {
-                "-N",
-                config.StatsAvg.ToString(),
-                "-i",
-                config.Intensity,
-                "-a",
-                Algorithm.Find(config.Algorithm, _algorithms).Argument,
-                "-o",
-                config.PoolUrl,
-                "-u",
-                config.Username,
-                "-p",
-                config.Password
-            });
+            var algorithm = Algorithm.Find(config.Algorithm, _algorithms).Argument;
+            _minerCli.Run(config, algorithm);
+        }
+
+        public MinerReport GetMinerReport()
+        {
+            return _minerCli.MinerReport;
         }
 
         private void _minerCli_ErrorDataReceived(object sender, DataReceivedEventArgs e)
@@ -129,18 +123,6 @@ namespace ccminer_gui
             {
                 return !_minerCli.Closed;
             }
-        }
-
-        public string RemoveColors(string data)
-        {
-            data = data.Replace("\u001b[0m", "");
-            data = data.Replace("\u001b[32m", "");
-            data = data.Replace("\u001b[33m", "");
-            data = data.Replace("\u001b[34m", "");
-            data = data.Replace("\u001b[35m", "");
-            data = data.Replace("\u001b[36m", "");
-            data = data.Replace("\u001b[01;37m", "");
-            return data;
         }
 
         private List<Algorithm> _algorithms;

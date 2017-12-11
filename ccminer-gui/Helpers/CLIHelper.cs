@@ -2,7 +2,6 @@
 using System.Diagnostics;
 using System.IO;
 using System.Text;
-using System.Text.RegularExpressions;
 
 namespace ccminer_gui
 {
@@ -43,7 +42,7 @@ namespace ccminer_gui
             return -1;
         }
 
-        private void Cli_OutputDataReceived(object sender, DataReceivedEventArgs e)
+        public virtual void Cli_OutputDataReceived(object sender, DataReceivedEventArgs e)
         {
             if (e.Data != null)
             {
@@ -51,7 +50,7 @@ namespace ccminer_gui
             }
         }
 
-        private void Cli_ErrorDataReceived(object sender, DataReceivedEventArgs e)
+        public virtual void Cli_ErrorDataReceived(object sender, DataReceivedEventArgs e)
         {
             if (e.Data != null)
             {
