@@ -166,6 +166,15 @@ namespace ccminer_gui
                     }
                 }
             }
+            else if (!idleBox.Checked && _isStarted)
+            {
+                // Crash checker.
+                if (!_miner.IsRunning)
+                {
+                    AddItem("----------- Starting Miner (Previous Crashed?) -----------");
+                    _miner.Run(_customConfig);
+                }
+            }
         }
 
         private void Miner_FormClosing(object sender, FormClosingEventArgs e)
