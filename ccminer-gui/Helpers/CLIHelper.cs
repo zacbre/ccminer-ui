@@ -15,9 +15,9 @@ namespace ccminer_gui
 
         public virtual int Open(string path, string[] args = null)
         {
-            process = new Process();
             if (File.Exists(path) && Closed)
             {
+                process = new Process();
                 ProcessStartInfo psi = new ProcessStartInfo(path)
                 {
                     UseShellExecute = false,
