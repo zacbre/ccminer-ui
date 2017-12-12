@@ -4,7 +4,7 @@ A basic UI for ccminer.
 
 This UI includes support for idle mining. If the box is checked, the UI will only mine when your computer has been idle for more than 2 minutes.
 
-![Alt text](https://shotr.io/KLLgDxERrI.png "Screenshot")
+![Alt text](https://shotr.io/OTQG7MtPj.png "Screenshot")
 
 This miner supports what ccminer supports:
 
