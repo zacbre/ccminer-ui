@@ -22,6 +22,10 @@ namespace ccminer_gui
             {
                 return _minerReport;
             }
+            set
+            {
+                _minerReport = value;
+            }
         }
 
         public void Run(IConfig config, string algorithm)

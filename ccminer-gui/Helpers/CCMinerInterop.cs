@@ -102,6 +102,11 @@ namespace ccminer_gui
             return _minerCli.MinerReport;
         }
 
+        public void ResetMinerReport()
+        {
+            _minerCli.MinerReport = new MinerReport();
+        }
+
         private void _minerCli_ErrorDataReceived(object sender, DataReceivedEventArgs e)
         {
             ErrorDataReceived?.Invoke(sender, e);

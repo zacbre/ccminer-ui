@@ -71,10 +71,7 @@ namespace ccminer_gui
 
         private string _path = Path.Combine(Environment.CurrentDirectory, "guiminer.conf");
         private BinaryFormatter _bin = new BinaryFormatter();
-
-        private int _accepted = 0;
-        private int _stale = 0;
-
+        
         private Series _hashrateSeries;
         private Series _difficultySeries;
 
@@ -132,7 +129,6 @@ namespace ccminer_gui
                 {
                     AddItem("----------- Starting Miner -----------");
                     _miner.Run(_customConfig);
-                    chartTimer.Start();
                 }
             }
             else
@@ -158,7 +154,7 @@ namespace ccminer_gui
             else
             {
                 _miner.Stop();
-                chartTimer.Stop();
+                _miner.ResetMinerReport();
                 AddItem("----------- Stopped Miner -----------");
                 startButton.Text = "Start";
                 algorithmBox.Enabled = true;
@@ -184,7 +180,6 @@ namespace ccminer_gui
                     {
                         AddItem("----------- Starting Miner (Detected PC Idle) -----------");
                         _miner.Run(_customConfig);
-                        chartTimer.Start();
                     }
                 }
                 else
@@ -192,8 +187,8 @@ namespace ccminer_gui
                     if (_miner.IsRunning)
                     {
                         _miner.Stop();
+                        _miner.ResetMinerReport();
                         AddItem("----------- Stopped Miner (Detected PC Input) -----------");
-                        chartTimer.Stop();
                     }
                 }
             }
@@ -204,7 +199,6 @@ namespace ccminer_gui
                 {
                     AddItem("----------- Starting Miner (Previous Crashed?) -----------");
                     _miner.Run(_customConfig);
-                    chartTimer.Start();
                 }
             }
 
@@ -221,7 +215,7 @@ namespace ccminer_gui
             {
                 _isStarted = false;
                 _miner.Stop();
-                chartTimer.Stop();
+                _miner.ResetMinerReport();
             }
         }
 
@@ -232,7 +226,7 @@ namespace ccminer_gui
                 XValueType = ChartValueType.Time,
                 ChartType = SeriesChartType.Spline,
                 Color = Color.Orange,
-                BorderWidth = 3,
+                BorderWidth = 2,
             };
 
             _hashrateSeries = new Series("Hashrate (kH/s)")
@@ -240,7 +234,7 @@ namespace ccminer_gui
                 XValueType = ChartValueType.Time,
                 ChartType = SeriesChartType.Spline,
                 Color = Color.Purple,
-                BorderWidth = 3,
+                BorderWidth = 2,
             };
 
             _difficultySeries.Points.Add(new DataPoint(DateTime.Now.ToOADate(), 0));
@@ -252,19 +246,17 @@ namespace ccminer_gui
             _acceptedSeries = new Series("Accepted Shares")
             {
                 XValueType = ChartValueType.Time,
-                ChartType = SeriesChartType.Column,
+                ChartType = SeriesChartType.Line,
                 Color = Color.Green,
-                BorderWidth = 3,
-                MarkerBorderWidth = 3,
+                BorderWidth = 2,
             };
 
             _staleSeries = new Series("Stale Shares")
             {
                 XValueType = ChartValueType.Time,
-                ChartType = SeriesChartType.Column,
-                Color = Color.Yellow,
-                BorderWidth = 3,
-                MarkerBorderWidth = 3,
+                ChartType = SeriesChartType.Line,
+                Color = Color.Red,
+                BorderWidth = 2,
             };
 
             _acceptedSeries.Points.Add(new DataPoint(DateTime.Now.ToOADate(), 0));
@@ -274,9 +266,9 @@ namespace ccminer_gui
             chart2.Series.Add(_staleSeries);
 
             chartTimer.Tick += ChartTimer_Tick;
-            chartTimer.Interval = 60000;
+            chartTimer.Interval = 5000;
 
-            ChartTimer_Tick(null, null);
+            chartTimer.Start();
         }
 
         private void ChartTimer_Tick(object sender, EventArgs e)
@@ -287,14 +279,8 @@ namespace ccminer_gui
 
             _hashrateSeries.Points.Add(new DataPoint(time.ToOADate(), Convert.ToDouble(report.TotalHashrate)));
             _difficultySeries.Points.Add(new DataPoint(time.ToOADate(), Convert.ToDouble(report.BlockDifficulty)));
-            _acceptedSeries.Points.Add(new DataPoint(time.ToOADate(), Convert.ToDouble(report.AcceptedShares - _accepted)));
-            _staleSeries.Points.Add(new DataPoint(time.ToOADate(), Convert.ToDouble(report.StaleShares - _stale)));
-
-            _accepted = report.AcceptedShares;
-            _stale = report.StaleShares;
-
-            chart2.Series["Accepted Shares"]["PixelPointWidth"] = "10";
-            chart2.Series["Stale Shares"]["PixelPointWidth"] = "10";
+            _acceptedSeries.Points.Add(new DataPoint(time.ToOADate(), Convert.ToDouble(report.AcceptedShares)));
+            _staleSeries.Points.Add(new DataPoint(time.ToOADate(), Convert.ToDouble(report.StaleShares)));
 
             DateTime scroll = time.AddHours(-1);
 
@@ -303,6 +289,24 @@ namespace ccminer_gui
 
             chart2.ChartAreas[0].AxisX.Minimum = scroll.ToOADate();
             chart2.ChartAreas[0].AxisX.Maximum = DateTime.Now.AddMinutes(1).ToOADate();
+
+            if (_hashrateSeries.Points.Count > 720)
+            {
+                _hashrateSeries.Points.RemoveAt(0);
+            }
+            if (_difficultySeries.Points.Count > 720)
+            {
+                _difficultySeries.Points.RemoveAt(0);
+            }
+
+            if (_acceptedSeries.Points.Count > 720)
+            {
+                _acceptedSeries.Points.RemoveAt(0);
+            }
+            if (_staleSeries.Points.Count > 720)
+            {
+                _staleSeries.Points.RemoveAt(0);
+            }
         }
     }
 }
