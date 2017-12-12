@@ -47,7 +47,7 @@ namespace ccminer_gui
                 totalSharesLabel.Text = report.TotalShares.ToString();
                 staleSharesLabel.Text = report.StaleShares.ToString();
 
-                totalHashrateLabel.Text = report.TotalHashrate.ToString() + " kH/s";
+                totalHashrateLabel.Text = report.TotalHashrate.ToString() + " MH/s";
                 blockDifficultyLabel.Text = report.BlockDifficulty.ToString();
                 stratumDifficultyLabel.Text = report.StratumDifficulty.ToString();
                 blockLabel.Text = report.Block.ToString();
@@ -277,7 +277,7 @@ namespace ccminer_gui
 
             var time = DateTime.Now;
 
-            _hashrateSeries.Points.Add(new DataPoint(time.ToOADate(), Convert.ToDouble(report.TotalHashrate)));
+            _hashrateSeries.Points.Add(new DataPoint(time.ToOADate(), Convert.ToDouble(report.TotalHashrate * 1000)));
             _difficultySeries.Points.Add(new DataPoint(time.ToOADate(), Convert.ToDouble(report.BlockDifficulty)));
             _acceptedSeries.Points.Add(new DataPoint(time.ToOADate(), Convert.ToDouble(report.AcceptedShares)));
             _staleSeries.Points.Add(new DataPoint(time.ToOADate(), Convert.ToDouble(report.StaleShares)));

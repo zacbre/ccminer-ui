@@ -11,9 +11,9 @@ namespace ccminer_gui
         {
             _stratumDifficulty = new Regex(@"Stratum difficulty set to (.+?) \(.*$");
             _blockDifficulty = new Regex(@"block (.+?), diff (.+?)$");
-            _gpuMatch = new Regex(@"GPU #[0-9]:.+?,(.+?) kH/s");
+            _gpuMatch = new Regex(@"GPU #[0-9]:.+?,(.+?) (kH/s|MH/s)");
 
-            _sharesMatch = new Regex(@"accepted: (.+?)/(.+?) \(diff.+?, (.+?) kH/s");
+            _sharesMatch = new Regex(@"accepted: (.+?)/(.+?) \(diff.+?, (.+?) (kH/s|MH/s)");
         }
 
         public MinerReport MinerReport
@@ -68,7 +68,14 @@ namespace ccminer_gui
             if (_gpuMatch.IsMatch(data))
             {
                 var match = _gpuMatch.Match(data);
-                _minerReport.TotalHashrate = Convert.ToDecimal(match.Groups[1].Value);
+                if (match.Groups[2].Value == "MH/s")
+                {
+                    _minerReport.TotalHashrate = Convert.ToDecimal(match.Groups[1].Value);
+                }
+                else
+                {
+                    _minerReport.TotalHashrate = (Convert.ToDecimal(match.Groups[1].Value) / 1000);
+                }
             }
 
             if (_sharesMatch.IsMatch(data))
@@ -78,7 +85,14 @@ namespace ccminer_gui
                 _minerReport.TotalShares = Convert.ToInt32(match.Groups[2].Value);
                 _minerReport.StaleShares = _minerReport.TotalShares - _minerReport.AcceptedShares;
 
-                _minerReport.TotalHashrate = Convert.ToDecimal(match.Groups[3].Value);
+                if (match.Groups[4].Value == "MH/s")
+                {
+                    _minerReport.TotalHashrate = Convert.ToDecimal(match.Groups[3].Value);
+                }
+                else
+                {
+                    _minerReport.TotalHashrate = (Convert.ToDecimal(match.Groups[3].Value) / 1000);
+                }
             }
         }
 
